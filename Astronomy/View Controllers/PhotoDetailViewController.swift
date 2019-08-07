@@ -10,6 +10,7 @@ import UIKit
 import Photos
 
 class PhotoDetailViewController: UIViewController {
+    var imageData: Data!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,15 +33,10 @@ class PhotoDetailViewController: UIViewController {
     
     private func updateViews() {
         guard let photo = photo, isViewLoaded else { return }
-        do {
-            let data = try Data(contentsOf: photo.imageURL)
-            imageView.image = UIImage(data: data)
-            let dateString = dateFormatter.string(from: photo.earthDate)
-            detailLabel.text = "Taken by \(photo.camera.roverId) on \(dateString) (Sol \(photo.sol))"
-            cameraLabel.text = photo.camera.fullName
-        } catch {
-            NSLog("Error setting up views on detail view controller: \(error)")
-        }
+        imageView.image = UIImage(data: self.imageData)
+        let dateString = dateFormatter.string(from: photo.earthDate)
+        detailLabel.text = "Taken by \(photo.camera.roverId) on \(dateString) (Sol \(photo.sol))"
+        cameraLabel.text = photo.camera.fullName
     }
     
     // MARK: - Properties

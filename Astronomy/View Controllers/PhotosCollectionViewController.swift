@@ -28,22 +28,24 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
     
     @IBAction func goToPreviousSol(_ sender: Any?) {
         guard let solDescriptions = roverInfo?.solDescriptions else { return }
-        guard let sol = solDescription?.sol, sol > 0 else {
+        guard let description = solDescription,
+            let index = roverInfo?.solDescriptions.firstIndex(of: description), description.sol > 0 else {
             solDescription = solDescriptions.first
             return
         }
         
-        solDescription = solDescriptions[sol-1]
+        solDescription = solDescriptions[index-1]
     }
     
     @IBAction func goToNextSol(_ sender: Any?) {
         guard let solDescriptions = roverInfo?.solDescriptions else { return }
-        guard let sol = solDescription?.sol, sol < solDescriptions.count else {
+        guard let description = solDescription,
+            let index = roverInfo?.solDescriptions.firstIndex(of: description), description.sol < solDescriptions.count else {
             solDescription = solDescriptions.last
             return
         }
         
-        solDescription = solDescriptions[sol+1]
+        solDescription = solDescriptions[index+1]
     }
     
     // UICollectionViewDataSource/Delegate
@@ -93,7 +95,9 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
         if segue.identifier == "ShowDetail" {
             guard let indexPath = collectionView.indexPathsForSelectedItems?.first else { return }
             let detailVC = segue.destination as! PhotoDetailViewController
-            detailVC.photo = photoReferences[indexPath.item]
+            let reference = photoReferences[indexPath.item]
+            detailVC.imageData = cache.value(for: reference.id)
+            detailVC.photo = reference
         }
     }
     
@@ -102,7 +106,7 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
     private func configureTitleView() {
         
         let font = UIFont.systemFont(ofSize: 30)
-        let attrs = [NSAttributedStringKey.font: font]
+        let attrs = [NSAttributedString.Key.font: font]
         
         let prevButton = UIButton(type: .system)
         let prevTitle = NSAttributedString(string: "<", attributes: attrs)
@@ -149,7 +153,7 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
             defer { self.operations.removeValue(forKey: photoReference.id) }
             
             if let currentIndexPath = self.collectionView?.indexPath(for: cell),
-                currentIndexPath == indexPath {
+                currentIndexPath != indexPath {
                 return // Cell has been reused
             }
             
@@ -184,7 +188,6 @@ class PhotosCollectionViewController: UIViewController, UICollectionViewDataSour
         didSet {
             if let rover = roverInfo,
                 let sol = solDescription?.sol {
-                photoReferences = []
                 client.fetchPhotos(from: rover, onSol: sol) { (photoRefs, error) in
                     if let e = error { NSLog("Error fetching photos for \(rover.name) on sol \(sol): \(e)"); return }
                     self.photoReferences = photoRefs ?? []
